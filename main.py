@@ -7,7 +7,8 @@ def main():
         if input_message.lower() in ["exit", "quit"]:
             print("Goodbye!")
             break
-        send_message(input_message)
+        response = send_message(input_message)
+        print(f"Assistant: {response}")
 
 
 if __name__ == "__main__":
