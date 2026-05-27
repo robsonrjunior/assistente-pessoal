@@ -1,5 +1,8 @@
+from assistant import send_message
+
+
 def main():
-    print("Hello from assistente-pessoal!")
+    send_message("Olá")
 
 
 if __name__ == "__main__":
