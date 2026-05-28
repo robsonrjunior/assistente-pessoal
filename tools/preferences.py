@@ -6,10 +6,10 @@ from langchain.tools import tool
 load_dotenv()
 
 @tool
-def set_language_preference(language: str) -> None:
+def set_language_preference(language: str) -> dict:
     """Set the user's language preference."""
     try:
-        conn = sqlite3.connect(os.getenv("PREFERENCES_DB"), check_same_thread=False)
+        conn = sqlite3.connect(os.getenv("ASSISTANT_DB"), check_same_thread=False)
         cur = conn.cursor()
         cur.execute("INSERT OR REPLACE INTO preferences (key, value) VALUES (?, ?)", ("language", language))
         conn.commit()
@@ -25,10 +25,10 @@ def set_language_preference(language: str) -> None:
         }
     
 @tool
-def set_assistant_name(name: str) -> None:
+def set_assistant_name(name: str) -> dict:
     """Set the assistant's name."""
     try:
-        conn = sqlite3.connect(os.getenv("PREFERENCES_DB"), check_same_thread=False)
+        conn = sqlite3.connect(os.getenv("ASSISTANT_DB"), check_same_thread=False)
         cur = conn.cursor()
         cur.execute("INSERT OR REPLACE INTO preferences (key, value) VALUES (?, ?)", ("assistant_name", name))
         conn.commit()
@@ -44,10 +44,10 @@ def set_assistant_name(name: str) -> None:
         }
     
 @tool
-def set_user_name(name: str) -> None:
+def set_user_name(name: str) -> dict:
     """Set the user's name."""
     try:
-        conn = sqlite3.connect(os.getenv("PREFERENCES_DB"), check_same_thread=False)
+        conn = sqlite3.connect(os.getenv("ASSISTANT_DB"), check_same_thread=False)
         cur = conn.cursor()
         cur.execute("INSERT OR REPLACE INTO preferences (key, value) VALUES (?, ?)", ("user_name", name))
         conn.commit()
@@ -63,10 +63,10 @@ def set_user_name(name: str) -> None:
         }
     
 @tool
-def set_user_preferred_name(preferred_name: str) -> None:
+def set_user_preferred_name(preferred_name: str) -> dict:
     """Set the user's preferred name."""
     try:
-        conn = sqlite3.connect(os.getenv("PREFERENCES_DB"), check_same_thread=False)
+        conn = sqlite3.connect(os.getenv("ASSISTANT_DB"), check_same_thread=False)
         cur = conn.cursor()
         cur.execute("INSERT OR REPLACE INTO preferences (key, value) VALUES (?, ?)", ("user_preferred_name", preferred_name))
         conn.commit()

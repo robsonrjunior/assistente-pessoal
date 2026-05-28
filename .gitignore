@@ -12,3 +12,7 @@ wheels/
 .env
 
 checkpointer.db
+
+databases/*
+
+!databases/.gitignore
