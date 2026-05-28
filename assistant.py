@@ -27,6 +27,7 @@ def _create_preferences_table_if_not_exists():
     conn.close()
 _create_preferences_table_if_not_exists()
 
+
 @before_model
 def inject_preferences(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
     """Inject user preferences into the agent's context before invoking the model."""
@@ -43,18 +44,21 @@ def inject_preferences(state: AgentState, runtime: Runtime) -> dict[str, Any] | 
 
     if not rows:
         return None
+    
+    preferences_content = ""
+    assistant_name = next((value for key, value in rows if key == "assistant_name"), "Assistant")
+    if assistant_name:
+        preferences_content += f"Your name: {assistant_name}\n"
 
     preferences_text = "\n".join(
         f"- {key}: {value}"
         for key, value in rows
+        if key != "assistant_name"
     )
 
-    system_message = SystemMessage(
-        content=f"""
-                User preferences:
-                {preferences_text}
-                """.strip()
-    )
+    preferences_content += f"User preferences:\n{preferences_text}"
+
+    system_message = SystemMessage(preferences_content.strip())
 
     return {
         "messages": [system_message]
