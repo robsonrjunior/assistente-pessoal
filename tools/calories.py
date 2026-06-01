@@ -75,7 +75,63 @@ def get_calories_ids(startDate: str, endDate: str) -> dict:
         cur.execute(query, (startDate, endDate))
         results = cur.fetchall()
         conn.close()
-        return [row[0] for row in results]
+        return {
+            "status": "success",
+            "calorie_ids": [row[0] for row in results]
+        }
     except Exception as e:
         print(f"Error fetching calorie IDs: {e}")
-        return []
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+    
+
+@tool
+def edit_calory(calory_id: int, food: str, calories: int) -> dict:
+    """
+    Edit a calorie entry.
+    Args:
+        calory_id (int): The ID of the calorie entry to edit.
+        food (str): The new food name.
+        calories (int): The new calorie value.
+    """
+    try:
+        conn = sqlite3.connect(os.getenv("ASSISTANT_DB"), check_same_thread=False)
+        cur = conn.cursor()
+        cur.execute("UPDATE calories SET food = ?, calories = ? WHERE id = ?", (food, calories, calory_id))
+        conn.commit()
+        conn.close()
+        return {
+            "status": "success",
+            "message": f"Calorie entry {calory_id} updated."
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+    
+
+@tool
+def delete_calory(calory_id: int) -> dict:
+    """
+    Delete a calorie entry.
+    Args:
+        calory_id (int): The ID of the calorie entry to delete.
+    """
+    try:
+        conn = sqlite3.connect(os.getenv("ASSISTANT_DB"), check_same_thread=False)
+        cur = conn.cursor()
+        cur.execute("DELETE FROM calories WHERE id = ?", (calory_id,))
+        conn.commit()
+        conn.close()
+        return {
+            "status": "success",
+            "message": f"Calorie entry {calory_id} deleted."
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
