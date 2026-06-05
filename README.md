@@ -52,3 +52,36 @@ python main.py
 ```
 
 Para sair do chat, digite `exit` ou `quit`.
+
+## Instalação de dependências
+
+Na raiz do projeto, ative seu ambiente virtual e instale as depêndencias pelo uv.
+
+```bash
+source .venv/Scripts/activate
+pip install uv
+uv sync
+```
+
+## Gateway do Telegram
+
+### 1. Criar o bot
+
+1. Abra o Telegram e converse com o BotFather.
+2. Execute o comando `/newbot`.
+3. Defina nome e username do bot.
+4. Copie o token gerado.
+
+### 2. Configurar variáveis de ambiente
+
+Defina no seu ambiente (ou em `.env`):
+
+- `TELEGRAM_BOT_TOKEN`: token recebido do BotFather.
+
+### 3. Executar
+
+```bash
+python -m gateways.telegram_gateway
+```
+
+Depois disso, envie uma mensagem para o seu bot no Telegram.
