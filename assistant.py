@@ -51,25 +51,43 @@ _create_calories_table_if_not_exists()
 
 
 @before_model
-def trim_conversation(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-    """Keep only the last few messages to fit context window."""
-
+def trim_conversation(state, runtime):
     messages = state["messages"]
 
     trimmed_messages = trim_messages(
         messages=messages,
-        max_tokens=8, # Number of messages to keep
+        max_tokens=20,
         token_counter=len,
         strategy="last",
         include_system=True,
-        allow_partial=False,
         start_on="human",
     )
+
+    has_human = any(
+        isinstance(m, HumanMessage)
+        for m in trimmed_messages
+    )
+
+    if not has_human:
+        last_human = next(
+            (
+                m
+                for m in reversed(messages)
+                if isinstance(m, HumanMessage)
+            ),
+            None,
+        )
+
+        if last_human:
+            trimmed_messages.append(last_human)
+
+    if not trimmed_messages:
+        return None
 
     return {
         "messages": [
             RemoveMessage(id=REMOVE_ALL_MESSAGES),
-            *trimmed_messages
+            *trimmed_messages,
         ]
     }
 
@@ -123,7 +141,7 @@ def send_message(message: str) -> None:
     conn = sqlite3.connect(os.getenv("CHECKPOINTER_DB"), check_same_thread=False)
     checkpointer = SqliteSaver(conn)
     system_prompt = "You are a helpful assistant."
-    model = init_chat_model("google_genai:gemini-3.5-flash")
+    model = init_chat_model("google_genai:gemini-3.1-flash-lite")
     agent = create_agent(
         model=model,
         tools=[
