@@ -7,7 +7,7 @@ load_dotenv()
 
 @tool
 def set_language_preference(language: str) -> dict:
-    """Set the user's language preference."""
+    """Set the user's language preference. Language tag following BCP 47 (e.g. pt-BR, en-US, es-ES)."""
     try:
         conn = sqlite3.connect(os.getenv("ASSISTANT_DB"), check_same_thread=False)
         cur = conn.cursor()
