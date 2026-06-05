@@ -77,6 +77,7 @@ uv sync
 Defina no seu ambiente (ou em `.env`):
 
 - `TELEGRAM_BOT_TOKEN`: token recebido do BotFather.
+- `ALLOWED_USERS`: lista de IDs permitidos (ex.: `[123456789,987654321]`). Use `[]` para liberar acesso a qualquer usuário.
 
 ### 3. Executar
 
