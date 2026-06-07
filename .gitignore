@@ -16,3 +16,6 @@ checkpointer.db
 databases/*
 
 !databases/.gitignore
+
+logs/*
+!logs/.gitignore
