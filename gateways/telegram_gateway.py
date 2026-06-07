@@ -107,7 +107,9 @@ def run_telegram_gateway() -> None:
 	application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
 	logger.info("Telegram gateway started with polling.")
-	application.run_polling()
+	# This gateway runs in a background thread when started by main.py.
+	# Disabling signal handlers avoids RuntimeError outside the main thread.
+	application.run_polling(stop_signals=None)
 
 
 if __name__ == "__main__":
