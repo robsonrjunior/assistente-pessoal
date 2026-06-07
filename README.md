@@ -86,3 +86,113 @@ python -m gateways.telegram_gateway
 ```
 
 Depois disso, envie uma mensagem para o seu bot no Telegram.
+
+# Deploy — Assistente Pessoal
+
+## 1. Preparar o servidor de producao
+
+No servidor Linux:
+
+1. Clone o repositorio em `/opt/assistente-pessoal` e ajuste o dono:
+
+```bash
+sudo git clone <url-do-repo> /opt/assistente-pessoal
+sudo chown -R deploy:deploy /opt/assistente-pessoal
+```
+
+2. Instale Python 3.14+ e `uv`.
+
+3. Dentro do diretorio, rode `uv sync` para criar o `.venv` antes do primeiro start:
+
+```bash
+cd /opt/assistente-pessoal
+uv sync
+```
+
+4. Configure as variaveis de ambiente da aplicacao (`.env`).
+
+Sugestao: copie o `.env.example` para `.env` e ajuste os valores:
+
+```bash
+cp .env.example .env
+```
+
+Minimo recomendado para producao:
+
+- `GOOGLE_API_KEY`
+- `ASSISTANT_DB`
+- `CHECKPOINTER_DB`
+- `TELEGRAM_BOT_TOKEN`
+- `ALLOWED_USERS`
+- `RUN_INTERACTIVE_CONSOLE=false` (quando rodar via `systemd`)
+
+5. Permita que o usuario `deploy` reinicie o servico sem senha. Crie o arquivo `/etc/sudoers.d/deploy`:
+
+```
+deploy ALL=(ALL) NOPASSWD: /bin/systemctl restart assistente-pessoal, /bin/systemctl is-active assistente-pessoal
+```
+
+6. Configure um servico `systemd` para manter a aplicacao em execucao.
+
+Exemplo de servico (`/etc/systemd/system/assistente-pessoal.service`):
+
+```ini
+[Unit]
+Description=Assistente Pessoal
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/opt/assistente-pessoal
+Environment=RUN_INTERACTIVE_CONSOLE=false
+ExecStart=/opt/assistente-pessoal/.venv/bin/python /opt/assistente-pessoal/main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Depois:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable assistente-pessoal
+sudo systemctl start assistente-pessoal
+```
+
+---
+
+## 2. Configurar credenciais no Jenkins
+
+Crie estas credenciais no Jenkins:
+
+- `prod-ssh-key`: chave SSH com acesso ao servidor de producao.
+- `prod-deploy-host`: host/IP do servidor (Secret text).
+- `prod-deploy-user`: usuario SSH do deploy (Secret text).
+
+---
+
+## 3. Configurar o job no Jenkins
+
+O pipeline usa **polling** para detectar novos commits: a cada 2 minutos o Jenkins verifica se ha mudancas na branch `prod` e, se houver, dispara o deploy automaticamente.
+
+Nenhuma configuracao extra de rede e necessaria no servidor — o Jenkins e quem inicia a conexao.
+
+> O pipeline bloqueia deploy automaticamente em qualquer branch diferente de `prod`.
+
+---
+
+## 4. Fluxo final
+
+Ao dar push em `prod`:
+
+1. Jenkins detecta o novo commit via polling (ate 2 minutos de delay).
+2. Executa o `Jenkinsfile`.
+3. Conecta via SSH no servidor.
+4. Executa `scripts/deploy_prod.sh`.
+5. Atualiza o codigo para `origin/prod`.
+6. Reinstala dependencias com `uv sync`.
+7. Reinicia o servico `assistente-pessoal`.
+8. Confirma que o servico esta ativo.
