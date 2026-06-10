@@ -19,12 +19,10 @@ git reset --hard origin/prod
 
 uv sync
 
-SERVICE_NAME="${APP_SERVICE_NAME:-assistente-pessoal}"
-
 if command -v systemctl >/dev/null 2>&1; then
-  sudo systemctl restart "${SERVICE_NAME}"
-  sudo systemctl is-active --quiet "${SERVICE_NAME}"
-  echo "[deploy] Servico '${SERVICE_NAME}' reiniciado com sucesso"
+  sudo systemctl restart assistente-pessoal
+  sudo systemctl is-active --quiet assistente-pessoal
+  echo "[deploy] Servico 'assistente-pessoal' reiniciado com sucesso"
 else
   echo "[deploy] ERRO: systemctl nao encontrado. Configure outro gerenciador de processo."
   exit 1
