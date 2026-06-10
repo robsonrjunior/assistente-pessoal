@@ -129,7 +129,8 @@ Minimo recomendado para producao:
 5. Permita que o usuario `deploy` reinicie o servico sem senha. Crie o arquivo `/etc/sudoers.d/deploy`:
 
 ```
-deploy ALL=(ALL) NOPASSWD: /bin/systemctl restart assistente-pessoal, /bin/systemctl is-active assistente-pessoal
+Defaults:deploy !use_pty
+deploy ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart assistente-pessoal, /usr/bin/systemctl is-active --quiet assistente-pessoal
 ```
 
 6. Configure um servico `systemd` para manter a aplicacao em execucao.
