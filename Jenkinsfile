@@ -50,14 +50,14 @@ pipeline {
       steps {
         withCredentials([
           string(credentialsId: 'prod-deploy-host', variable: 'DEPLOY_HOST'),
-          string(credentialsId: 'prod-deploy-user', variable: 'DEPLOY_USER')
+          string(credentialsId: 'prod-deploy-user', variable: 'DEPLOY_USER'),
+          sshUserPrivateKey(credentialsId: 'prod-ssh-key', keyFileVariable: 'SSH_KEY')
         ]) {
-          sshagent(credentials: ['prod-ssh-key']) {
-            sh '''
-              ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \
-                "cd ${DEPLOY_PATH} && APP_SERVICE_NAME=${APP_SERVICE_NAME} bash scripts/deploy_prod.sh"
-            '''
-          }
+          sh '''
+            chmod 600 "${SSH_KEY}"
+            ssh -i "${SSH_KEY}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \
+              "cd ${DEPLOY_PATH} && APP_SERVICE_NAME=${APP_SERVICE_NAME} bash scripts/deploy_prod.sh"
+          '''
         }
       }
     }
