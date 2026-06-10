@@ -7,8 +7,6 @@ pipeline {
   }
 
   environment {
-    DEPLOY_HOST = credentials('prod-deploy-host')
-    DEPLOY_USER = credentials('prod-deploy-user')
     DEPLOY_PATH = '/opt/assistente-pessoal'
     APP_SERVICE_NAME = 'assistente-pessoal'
   }
@@ -27,10 +25,22 @@ pipeline {
     stage('Validate Branch') {
       steps {
         script {
-          def branch = env.BRANCH_NAME ?: sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+          def branch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: env.GIT_LOCAL_BRANCH
+          if (!branch?.trim()) {
+            branch = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+          }
+
+          if (branch == 'HEAD') {
+            branch = sh(
+              script: "git for-each-ref --format='%(refname:short)' --points-at HEAD refs/remotes/origin | sed -n 's#^origin/##p' | head -n1",
+              returnStdout: true
+            ).trim()
+          }
+
+          branch = branch.replaceFirst(/^origin\//, '').replaceFirst(/^refs\/heads\//, '')
           if (branch != 'prod') {
             currentBuild.result = 'NOT_BUILT'
-            error("Build ignorado: branch '${branch}'. Apenas 'prod' faz deploy.")
+            error('Build ignorado: apenas a branch prod faz deploy.')
           }
         }
       }
@@ -38,11 +48,16 @@ pipeline {
 
     stage('Deploy') {
       steps {
-        sshagent(credentials: ['prod-ssh-key']) {
-          sh '''
-            ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \
-              "cd ${DEPLOY_PATH} && APP_SERVICE_NAME=${APP_SERVICE_NAME} bash scripts/deploy_prod.sh"
-          '''
+        withCredentials([
+          string(credentialsId: 'prod-deploy-host', variable: 'DEPLOY_HOST'),
+          string(credentialsId: 'prod-deploy-user', variable: 'DEPLOY_USER')
+        ]) {
+          sshagent(credentials: ['prod-ssh-key']) {
+            sh '''
+              ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \
+                "cd ${DEPLOY_PATH} && APP_SERVICE_NAME=${APP_SERVICE_NAME} bash scripts/deploy_prod.sh"
+            '''
+          }
         }
       }
     }
