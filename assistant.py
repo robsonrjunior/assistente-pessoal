@@ -11,7 +11,7 @@ from langgraph.runtime import Runtime
 from typing import Any
 
 from pydantic import BaseModel, Field
-from tools.calories import get_calories_ids, get_todays_calories, save_calories
+from tools.calories import get_calories_ids, get_todays_calories_items, get_todays_total_calories, save_calories
 from tools.date import get_current_datetime
 from tools.preferences import set_assistant_name, set_language_preference, set_user_name
 from tools.scheduled_tasks import add_scheduled_task, list_scheduled_tasks, remove_scheduled_task
@@ -178,7 +178,8 @@ def send_message(message: str) -> None:
             set_user_name,
             get_current_datetime,
             save_calories,
-            get_todays_calories,
+            get_todays_total_calories,
+            get_todays_calories_items,
             get_calories_ids,
             add_scheduled_task,
             remove_scheduled_task,
