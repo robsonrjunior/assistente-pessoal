@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain.chat_models import init_chat_model
-from langchain.messages import HumanMessage, RemoveMessage, trim_messages
+from langchain.messages import AIMessage, HumanMessage, RemoveMessage, trim_messages
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
 import os
@@ -9,6 +9,7 @@ from langchain.agents.middleware import SummarizationMiddleware, after_model, be
 from langchain.messages import SystemMessage
 from langgraph.runtime import Runtime
 from typing import Any
+from datetime import datetime
 
 from pydantic import BaseModel, Field
 from tools.calories import get_calories_ids, get_todays_calories, save_calories
@@ -76,6 +77,98 @@ def _create_scheduled_tasks_table_if_not_exists():
     conn.commit()
     conn.close()
 _create_scheduled_tasks_table_if_not_exists()
+
+
+def _create_tokens_table_if_not_exists():
+    """Create the tokens table if it doesn't exist."""
+    conn = sqlite3.connect(os.getenv("ASSISTANT_DB"), check_same_thread=False)
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            token_day DATE NOT NULL,
+            message_id TEXT NOT NULL,
+            type TEXT NOT NULL CHECK (type IN ('input', 'output')),
+            quantity INTEGER NOT NULL,
+            created_at DATETIME DEFAULT (datetime('now', 'localtime')),
+            UNIQUE(message_id, type)
+        )
+    """)
+    conn.commit()
+    conn.close()
+_create_tokens_table_if_not_exists()
+
+
+def _content_to_text(content: Any) -> str:
+    """Normalize LangChain message content to plain text."""
+    if content is None:
+        return ""
+
+    if isinstance(content, str):
+        return content
+
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                text_value = item.get("text")
+                if isinstance(text_value, str):
+                    parts.append(text_value)
+        return "\n".join(parts)
+
+    return str(content)
+
+
+def _count_tokens(text: str, model: Any) -> int:
+    """Count tokens using model tokenizer when available, with fallback."""
+    clean_text = text or ""
+    try:
+        if hasattr(model, "get_num_tokens"):
+            return int(model.get_num_tokens(clean_text))
+    except Exception:
+        pass
+
+    # Fallback approximation when tokenizer is unavailable.
+    return len(clean_text.split())
+
+
+def _save_messages_tokens(messages: list[Any], model: Any) -> None:
+    """Persist token counts for human/assistant messages."""
+    if not messages:
+        return
+
+    rows_to_insert = []
+    token_day = datetime.now().date().isoformat()
+
+    for index, message in enumerate(messages):
+        if isinstance(message, HumanMessage):
+            message_type = "input"
+        elif isinstance(message, AIMessage):
+            message_type = "output"
+        else:
+            continue
+
+        message_id = getattr(message, "id", None) or f"msg_{token_day}_{index}"
+        content_text = _content_to_text(getattr(message, "content", ""))
+        quantity = _count_tokens(content_text, model)
+        rows_to_insert.append((token_day, str(message_id), message_type, quantity))
+
+    if not rows_to_insert:
+        return
+
+    conn = sqlite3.connect(os.getenv("ASSISTANT_DB"), check_same_thread=False)
+    cur = conn.cursor()
+    cur.executemany(
+        """
+        INSERT OR IGNORE INTO tokens (token_day, message_id, type, quantity)
+        VALUES (?, ?, ?, ?)
+        """,
+        rows_to_insert,
+    )
+    conn.commit()
+    conn.close()
 
 
 @before_model
@@ -198,5 +291,7 @@ def send_message(message: str) -> None:
         {"messages": messages},
         {"configurable": {"thread_id": "1"}}
     )
+
+    _save_messages_tokens(result.get("messages", []), model)
 
     return result["structured_response"].response
