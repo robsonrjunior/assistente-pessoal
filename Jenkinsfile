@@ -46,6 +46,20 @@ pipeline {
       }
     }
 
+    stage('Get deploy user') {
+      steps {
+        withCredentials([
+          string(credentialsId: 'prod-deploy-host', variable: 'DEPLOY_HOST'),
+          string(credentialsId: 'prod-deploy-user', variable: 'DEPLOY_USER'),
+          sshUserPrivateKey(credentialsId: 'prod-ssh-key', keyFileVariable: 'SSH_KEY')
+        ]) {
+          sh '''
+            ssh -i "${SSH_KEY}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "whoami"
+          '''
+        }
+      }
+    }
+
     stage('Deploy') {
       steps {
         withCredentials([
