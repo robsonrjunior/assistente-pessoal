@@ -5,7 +5,7 @@ from langchain.messages import HumanMessage, RemoveMessage, trim_messages
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
 import os
-from langchain.agents.middleware import SummarizationMiddleware, after_model, before_model, AgentState
+from langchain.agents.middleware import ModelCallLimitMiddleware, SummarizationMiddleware, after_model, before_model, AgentState
 from langchain.messages import SystemMessage
 from langgraph.runtime import Runtime
 from typing import Any
@@ -160,6 +160,11 @@ def inject_preferences(state: AgentState, runtime: Runtime) -> dict[str, Any] | 
     return {
         "messages": [system_message]
     }
+
+modelCallLimitMiddleware = ModelCallLimitMiddleware(
+    run_limit=int(os.getenv("MODEL_CALL_LIMIT", 50)),
+    exit_behavior="end",
+)
 
 class Response(BaseModel):
     """Response from the assistant."""
