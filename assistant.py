@@ -174,7 +174,7 @@ def send_message(message: str) -> None:
     conn = sqlite3.connect(os.getenv("CHECKPOINTER_DB"), check_same_thread=False)
     checkpointer = SqliteSaver(conn)
     system_prompt = "You are a helpful assistant."
-    model = init_chat_model("google_genai:gemini-3.1-flash-lite")
+    model = init_chat_model(os.getenv("LLM_MODEL"))
     agent = create_agent(
         model=model,
         tools=[

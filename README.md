@@ -130,7 +130,10 @@ Minimo recomendado para producao:
 
 ```
 Defaults:deploy !use_pty
-deploy ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart assistente-pessoal, /usr/bin/systemctl is-active --quiet assistente-pessoal
+deploy ALL=(ALL) NOPASSWD: \
+  /usr/bin/systemctl restart assistente-pessoal, \
+  /usr/bin/systemctl is-active assistente-pessoal, \
+  /usr/bin/systemctl status assistente-pessoal
 ```
 
 6. Configure um servico `systemd` para manter a aplicacao em execucao.
@@ -193,7 +196,8 @@ Ao dar push em `prod`:
 2. Executa o `Jenkinsfile`.
 3. Conecta via SSH no servidor.
 4. Executa `scripts/deploy_prod.sh`.
-5. Atualiza o codigo para `origin/prod`.
-6. Reinstala dependencias com `uv sync`.
-7. Reinicia o servico `assistente-pessoal`.
-8. Confirma que o servico esta ativo.
+5. Verifica se ha mudancas desde o ultimo deploy; encerra sem acao se nao houver.
+6. Atualiza o codigo para `origin/prod`.
+7. Reinstala dependencias com `uv sync --frozen --no-dev`.
+8. Reinicia o servico `assistente-pessoal`.
+9. Confirma que o servico esta ativo; executa rollback automatico em caso de falha.
