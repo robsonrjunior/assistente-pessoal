@@ -88,8 +88,6 @@ def _interval_seconds(value: int | None, unit: str | None) -> int | None:
 	if value is None or value <= 0 or unit is None:
 		return None
 
-	if unit == "second":
-		return value
 	if unit == "minute":
 		return value * 60
 	if unit == "hour":

@@ -63,7 +63,7 @@ def _create_scheduled_tasks_table_if_not_exists():
             schedule_type TEXT NOT NULL CHECK (schedule_type IN ('cron', 'interval')),
             cron_expression TEXT,
             interval_value INTEGER,
-            interval_unit TEXT CHECK (interval_unit IN ('second', 'minute', 'hour', 'day')),
+            interval_unit TEXT CHECK (interval_unit IN ('minute', 'hour', 'day')),
             is_active INTEGER NOT NULL DEFAULT 1,
             created_at DATETIME DEFAULT (datetime('now', 'localtime')),
             updated_at DATETIME DEFAULT (datetime('now', 'localtime')),

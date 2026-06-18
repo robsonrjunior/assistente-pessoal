@@ -9,10 +9,6 @@ load_dotenv()
 
 ScheduleType = Literal["cron", "interval", "intervalo"]
 IntervalUnit = Literal[
-    "second",
-    "seconds",
-    "segundo",
-    "segundos",
     "minute",
     "minutes",
     "minuto",
@@ -43,17 +39,15 @@ def add_scheduled_task(
     Supports:
     - schedule_type='cron' with cron_expression
     - schedule_type='interval' or 'intervalo' with interval_value and interval_unit
-      (second/minute/hour/day or segundo/minuto/hora/dia)
+          (minute/hour/day or minuto/hora/dia)
     """
     try:
         normalized_schedule_type: Literal["cron", "interval"] = (
             "interval" if schedule_type == "intervalo" else schedule_type
         )
 
-        normalized_interval_unit: Literal["second", "minute", "hour", "day"] | None = None
-        if interval_unit in ("second", "seconds", "segundo", "segundos"):
-            normalized_interval_unit = "second"
-        elif interval_unit in ("minute", "minutes", "minuto", "minutos"):
+        normalized_interval_unit: Literal["minute", "hour", "day"] | None = None
+        if interval_unit in ("minute", "minutes", "minuto", "minutos"):
             normalized_interval_unit = "minute"
         elif interval_unit in ("hour", "hours", "hora", "horas"):
             normalized_interval_unit = "hour"
@@ -78,7 +72,7 @@ def add_scheduled_task(
             if not normalized_interval_unit:
                 return {
                     "status": "error",
-                    "message": "interval_unit is required for interval scheduling (second, minute, hour, day).",
+                    "message": "interval_unit is required for interval scheduling (minute, hour, day).",
                 }
             cron_expression = None
 
